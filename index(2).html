@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Northstar Spend Analytics Dashboard</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+            --accent-green: #10b981;
+            --border-color: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            padding: 24px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        h1 span {
+            color: var(--accent-blue);
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .filters-panel {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group select {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            min-width: 160px;
+            cursor: pointer;
+        }
+
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .kpi-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .kpi-card.blue::before { background-color: var(--accent-blue); }
+        .kpi-card.red::before { background-color: var(--accent-red); }
+        .kpi-card.amber::before { background-color: var(--accent-amber); }
+        .kpi-card.green::before { background-color: var(--accent-green); }
+
+        .kpi-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-top: 8px;
+            color: var(--text-main);
+        }
+
+        .kpi-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .panel-header {
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: var(--bg-primary);
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge.success {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+        }
+
+        .badge.danger {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+        }
+
+        .alert-item {
+            background-color: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--accent-red);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .alert-body {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .bar-chart-mock {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .bar-label {
+            width: 100px;
+            color: var(--text-muted);
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .bar-track {
+            flex-grow: 1;
+            background-color: var(--bg-primary);
+            height: 12px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            background-color: var(--accent-blue);
+            height: 100%;
+            border-radius: 6px;
+        }
+
+        .bar-value {
+            width: 80px;
+            text-align: right;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div>
+            <h1>Northstar Projects <span>Spend Command Center</span></h1>
+            <div class="subtitle">Real-time Central Corporate & Project Site Spend Audit Framework</div>
+        </div>
+        <div>
+            <span class="badge success">System Connected</span>
+        </div>
+    </header>
+
+    <div class="filters-panel">
+        <div class="filter-group">
+            <label for="siteFilter">Location / Site</label>
+            <select id="siteFilter" onchange="filterData()">
+                <option value="ALL">All Sites</option>
+                <option value="HQ - Bengaluru">HQ - Bengaluru</option>
+                <option value="Pune Site 1">Pune Site 1</option>
+                <option value="Chennai Site">Chennai Site</option>
+                <option value="Hyderabad Site">Hyderabad Site</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="deptFilter">Department</label>
+            <select id="deptFilter" onchange="filterData()">
+                <option value="ALL">All Departments</option>
+                <option value="Operations">Operations</option>
+                <option value="Projects">Projects</option>
+                <option value="Admin">Admin</option>
+                <option value="People">People</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="kpi-container">
+        <div class="kpi-card blue">
+            <div class="kpi-title">Total Processed Spend</div>
+            <div class="kpi-value" id="kpiTotal">₹14,94,845</div>
+            <div class="kpi-desc">Across all filtered nodes</div>
+        </div>
+        <div class="kpi-card red">
+            <div class="kpi-title">Non-Compliant Capital</div>
+            <div class="kpi-value" id="kpiViolations">₹12,48,518</div>
+            <div class="kpi-desc" id="kpiViolationDesc">83.5% out-of-policy flag rate</div>
+        </div>
+        <div class="kpi-card amber">
+            <div class="kpi-title">Critical Escalations</div>
+            <div class="kpi-value" id="kpiEscalations">3 Patterns</div>
+            <div class="kpi-desc">Requires central CFO lock</div>
+        </div>
+        <div class="kpi-card green">
+            <div class="kpi-title">Budget Compliance</div>
+            <div class="kpi-value">45.5%</div>
+            <div class="kpi-desc">Safe variance parameters</div>
+        </div>
+    </div>
+
+    <div class="main-grid">
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">Audit Ledger Feed</div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tx ID</th>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Location</th>
+                            <th>Amount (INR)</th>
+                            <th>Policy Compliance</th>
+                            <th>Exception Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ledgerBody">
+                        <!-- Dynamic rows via Javascript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">CFO Real-time Alert System</div>
+                </div>
+                <div id="alertsContainer">
+                    <!-- Dynamic Alert Flags -->
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">Department Allocation</div>
+                </div>
+                <div class="bar-chart-mock" id="deptChartContainer">
+                    <!-- Dynamic horizontal bars -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const rawTransactions = [
+            { tx_id: "T000109", date: "2026-09-20", employee: "Rohit Nair", department: "Projects", location: "Hyderabad Site", amount: 816825.00, compliant: "No", reason: "Missing receipt" },
+            { tx_id: "T000122", date: "2026-09-13", employee: "Nisha Khanna", department: "Projects", location: "Chennai Site", amount: 345379.12, compliant: "No", reason: "Approval missing" },
+            { tx_id: "T000001", date: "2026-06-19", employee: "Sana Iyer", department: "Operations", location: "Pune Site 1", amount: 47160.03, compliant: "No", reason: "Approval missing" },
+            { tx_id: "T000004", date: "2026-09-06", employee: "Aditi Rao", department: "Operations", location: "Chennai Site", amount: 39654.66, compliant: "No", reason: "Spend above category limit" },
+            { tx_id: "T000002", date: "2026-07-29", employee: "Gaurav Kapoor", department: "Admin", location: "HQ - Bengaluru", amount: 28023.53, compliant: "Yes", reason: "None" },
+            { tx_id: "T000005", date: "2026-03-21", employee: "Rohit Nair", department: "Projects", location: "Hyderabad Site", amount: 11566.17, compliant: "No", reason: "Weekend spend" },
+            { tx_id: "T000003", date: "2026-07-15", employee: "Varun Gupta", department: "People", location: "HQ - Bengaluru", amount: 8712.80, compliant: "Yes", reason: "None" },
+            { tx_id: "T000905", date: "2026-07-14", employee: "Diya Sharma", department: "Operations", location: "Pune Site 1", amount: 49800.00, compliant: "Yes", reason: "Split Spend Pattern" },
+            { tx_id: "T000906", date: "2026-07-14", employee: "Diya Sharma", department: "Operations", location: "Pune Site 1", amount: 49750.00, compliant: "Yes", reason: "Split Spend Pattern" },
+            { tx_id: "T000907", date: "2026-08-22", employee: "Diya Sharma", department: "Operations", location: "Pune Site 1", amount: 49800.00, compliant: "Yes", reason: "Split Spend Pattern" },
+            { tx_id: "T000908", date: "2026-08-22", employee: "Diya Sharma", department: "Operations", location: "Pune Site 1", amount: 49750.00, compliant: "Yes", reason: "Split Spend Pattern" },
+            { tx_id: "T000909", date: "2026-09-08", employee: "Diya Sharma", department: "Operations", location: "Pune Site 1", amount: 49800.00, compliant: "Yes", reason: "Split Spend Pattern" },
+            { tx_id: "T000910", date: "2026-09-08", employee: "Diya Sharma", department: "Operations", location: "Pune Site 1", amount: 49750.00, compliant: "Yes", reason: "Split Spend Pattern" }
+        ];
+
+        function formatCurrency(num) {
+            return '₹' + num.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+        }
+
+        function filterData() {
+            const siteVal = document.getElementById("siteFilter").value;
+            const deptVal = document.getElementById("deptFilter").value;
+
+            const filtered = rawTransactions.filter(t => {
+                const matchSite = (siteVal === "ALL" || t.location === siteVal);
+                const matchDept = (deptVal === "ALL" || t.department === deptVal);
+                return matchSite && matchDept;
+            });
+
+            // Recalculate KPIs
+            let totalSpend = 0;
+            let violationSpend = 0;
+            let splitCount = 0;
+
+            filtered.forEach(t => {
+                totalSpend += t.amount;
+                if (t.compliant === "No" || t.reason === "Split Spend Pattern") {
+                    violationSpend += t.amount;
+                }
+                if (t.reason === "Split Spend Pattern") {
+                    splitCount++;
+                }
+            });
+
+            document.getElementById("kpiTotal").innerText = formatCurrency(totalSpend);
+            document.getElementById("kpiViolations").innerText = formatCurrency(violationSpend);
+            
+            const violationRate = totalSpend > 0 ? ((violationSpend / totalSpend) * 100).toFixed(1) : 0;
+            document.getElementById("kpiViolationDesc").innerText = `${violationRate}% out-of-policy rate`;
+
+            // Build Ledger rows
+            const tbody = document.getElementById("ledgerBody");
+            tbody.innerHTML = "";
+            filtered.forEach(t => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td style="font-weight: 600; color: var(--accent-blue);">${t.tx_id}</td>
+                    <td>${t.employee}</td>
+                    <td>${t.department}</td>
+                    <td>${t.location}</td>
+                    <td style="font-weight:600;">${formatCurrency(t.amount)}</td>
+                    <td><span class="badge ${t.compliant === 'Yes' ? 'success' : 'danger'}">${t.compliant === 'Yes' ? 'Compliant' : 'Flagged'}</span></td>
+                    <td style="color: ${t.compliant === 'No' ? 'var(--accent-red)' : 'var(--text-muted)'};">${t.reason}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // Build Alerts Container
+            const alertsContainer = document.getElementById("alertsContainer");
+            alertsContainer.innerHTML = "";
+            
+            if (siteVal === "ALL" || siteVal === "Pune Site 1") {
+                if (deptVal === "ALL" || deptVal === "Operations") {
+                    alertsContainer.innerHTML += `
+                        <div class="alert-item">
+                            <div class="alert-title"><span>⚠️ Structured Threshold Evasion</span><span>High Risk</span></div>
+                            <div class="alert-body">Employee Diya Sharma (Operations, Pune Site 1) has 6 ledger items matching artificial split signatures sitting right under the ₹50,000 baseline verification threshold.</div>
+                        </div>
+                    `;
+                }
+            }
+
+            if (filtered.some(t => t.tx_id === "T000109")) {
+                alertsContainer.innerHTML += `
+                    <div class="alert-item">
+                        <div class="alert-title"><span>⚠️ Critical Material Leakage</span><span>₹8.16L Exposed</span></div>
+                        <div class="alert-body">Transaction T000109 marked as 'Completed' for Contract Labour at Hyderabad Site without a physical verified invoice attached.</div>
+                    </div>
+                `;
+            }
+
+            if (alertsContainer.innerHTML === "") {
+                alertsContainer.innerHTML = "<div style='color: var(--text-muted); font-size: 14px;'>No critical automated protocol alerts triggered for this node combination.</div>";
+            }
+
+            // Department distribution chart
+            const deptMap = {};
+            filtered.forEach(t => {
+                deptMap[t.department] = (deptMap[t.department] || 0) + t.amount;
+            });
+
+            const chartContainer = document.getElementById("deptChartContainer");
+            chartContainer.innerHTML = "";
+            
+            let maxAmt = Math.max(...Object.values(deptMap), 1);
+
+            Object.keys(deptMap).forEach(d => {
+                const amt = deptMap[d];
+                const pct = (amt / maxAmt) * 100;
+                const row = document.createElement("div");
+                row.className = "bar-row";
+                row.innerHTML = `
+                    <div class="bar-label">${d}</div>
+                    <div class="bar-track"><div class="bar-fill" style="width: ${pct}%"></div></div>
+                    <div class="bar-value">${formatCurrency(amt)}</div>
+                `;
+                chartContainer.appendChild(row);
+            });
+        }
+
+        // Run on load
+        window.onload = filterData;
+    </script>
+</body>
+</html>
